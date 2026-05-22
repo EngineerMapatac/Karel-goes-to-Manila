@@ -7,7 +7,8 @@ robot = {
     "y": 1,
     "facing": "East",
     "packages": 0,
-    "moves": 0
+    "moves": 0,
+    "battery": 40
 }
 
 total_packages = 0
@@ -42,7 +43,7 @@ def main():
     
     while playing:
         clear_screen()
-        print(f"📦 Packages: {robot['packages']} / {total_packages}  |  👣 Moves: {robot['moves']}\n")
+        print(f"📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']}  |  👣 Moves: {robot['moves']}\n")
         
         render_map(manila_grid, robot)
         
@@ -50,7 +51,11 @@ def main():
             print(f"\nCongratulations! You delivered all packages across Metro Manila in {robot['moves']} moves!")
             break
             
-        print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [p] Pick Package | [q] Quit")
+        if robot["battery"] <= 0:
+            print("\nGame Over! The robot ran out of battery before delivering all packages.")
+            break
+            
+        print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [spacebar] Pick Package | [q] Quit")
         action = input("Enter command: ").lower()
         
         if action == 'q':
@@ -62,24 +67,28 @@ def main():
             if robot["y"] > 0 and manila_grid[robot["y"] - 1][robot["x"]] != 1:
                 robot["y"] -= 1
                 robot["moves"] += 1
+                robot["battery"] -= 1
                 
         elif action == 's': 
             robot["facing"] = "South"
             if robot["y"] < len(manila_grid) - 1 and manila_grid[robot["y"] + 1][robot["x"]] != 1:
                 robot["y"] += 1
                 robot["moves"] += 1
+                robot["battery"] -= 1
                 
         elif action == 'a': 
             robot["facing"] = "West"
             if robot["x"] > 0 and manila_grid[robot["y"]][robot["x"] - 1] != 1:
                 robot["x"] -= 1
                 robot["moves"] += 1
+                robot["battery"] -= 1
                 
         elif action == 'd': 
             robot["facing"] = "East"
             if robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"]][robot["x"] + 1] != 1:
                 robot["x"] += 1
                 robot["moves"] += 1
+                robot["battery"] -= 1
                 
         elif action == ' ' or action == 'p' or action == '': 
             if manila_grid[robot["y"]][robot["x"]] == 2:
