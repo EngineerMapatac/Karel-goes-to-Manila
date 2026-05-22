@@ -37,19 +37,29 @@ def generate_level(level_num):
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def load_high_score():
+def load_high_scores():
+    scores = []
     if os.path.exists("highscore.txt"):
         with open("highscore.txt", "r") as file:
-            data = file.read().strip().split(",")
-            if len(data) >= 3:
-                return data[0], int(data[1]), float(data[2])
-            elif len(data) == 2:
-                return data[0], int(data[1]), 999.99
-    return "No one", 0, 999.99
+            for line in file:
+                data = line.strip().split(",")
+                if len(data) == 4:
+                    # format: name, score, level, time_taken
+                    scores.append((data[0], int(data[1]), int(data[2]), float(data[3])))
+    # Sort by score descending
+    scores.sort(key=lambda x: x[1], reverse=True)
+    return scores[:5]
 
-def save_high_score(name, score, time_taken):
+def check_and_save_score(name, score, level, time_taken):
+    scores = load_high_scores()
+    scores.append((name, score, level, time_taken))
+    # Sort and slice to keep top 5
+    scores.sort(key=lambda x: x[1], reverse=True)
+    scores = scores[:5]
+    
     with open("highscore.txt", "w") as file:
-        file.write(f"{name},{score},{time_taken}")
+        for item in scores:
+            file.write(f"{item[0]},{item[1]},{item[2]},{item[3]}\n")
 
 def render_map(grid, bot):
     icons = {
@@ -74,17 +84,23 @@ def render_map(grid, bot):
 
 def main():
     clear_screen()
-    best_name, best_score, best_time = load_high_score()
-    display_best_time = best_time if best_time != 999.99 else "--"
+    high_scores = load_high_scores()
     
-    print("========================================")
-    print("   WELCOME TO KAREL GOES TO MANILA")
-    print("            ENDLESS MODE")
-    print("========================================")
-    print(f"🏆 Current Champion: {best_name}")
-    print(f"⭐ Highest Score: {best_score}")
-    print(f"⚡ Fastest Level: {display_best_time}s")
-    print("========================================\n")
+    print("====================================================")
+    print("         WELCOME TO KAREL GOES TO MANILA")
+    print("                  ENDLESS MODE")
+    print("====================================================")
+    print("🏆 TOP 5 LEADERBOARD:")
+    print(f"{'Rank':<5} {'Player':<15} {'Score':<10} {'Level':<8} {'Speed':<8}")
+    print("-" * 52)
+    
+    if not high_scores:
+        print("No records yet! Be the first one to set a score.")
+    else:
+        for i, (name, score, lvl, t_taken) in enumerate(high_scores, 1):
+            print(f"{i:<5} {name:<15} {score:<10} {lvl:<8} {t_taken}s")
+            
+    print("====================================================\n")
     
     player_name = input("Enter your player name: ")
     
@@ -92,11 +108,16 @@ def main():
     level_start_time = time.time()
     playing = True
     
+    # Store fastest single level time dynamically during this run
+    fastest_level_time = 999.99
+    
     while playing:
         current_time = round(time.time() - level_start_time, 2)
         clear_screen()
         
-        print(f"Player: {player_name}  |  Total Score: {robot['score']}")
+        top_score_display = high_scores[0][1] if high_scores else 0
+        
+        print(f"Player: {player_name}  |  Current Score: {robot['score']}  |  Target High Score: {top_score_display}")
         print(f"Level: {robot['level']}  |  📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']}  |  ⏱️ Time: {current_time}s\n")
         
         render_map(manila_grid, robot)
@@ -107,14 +128,11 @@ def main():
             level_points = (robot["battery"] * 10) + time_bonus
             robot["score"] += level_points
             
+            if time_taken < fastest_level_time:
+                fastest_level_time = time_taken
+            
             print(f"\nLevel {robot['level']} Cleared in {time_taken}s!")
             print(f"Points Earned: {level_points} (Total: {robot['score']})")
-            
-            if time_taken < best_time:
-                print("⚡ NEW FASTEST LEVEL TIME! ⚡")
-                best_time = time_taken
-                save_high_score(best_name, best_score, best_time)
-            
             time.sleep(2)
             
             robot["level"] += 1
@@ -130,9 +148,9 @@ def main():
             print(f"\nGame Over! The robot ran out of battery at Level {robot['level']}.")
             print(f"Final Score: {robot['score']}")
             
-            if robot["score"] > best_score:
-                print("🎉 NEW HIGH SCORE! 🎉")
-                save_high_score(player_name, robot["score"], best_time)
+            # Save and check standing
+            final_fastest = fastest_level_time if fastest_level_time != 999.99 else current_time
+            check_and_save_score(player_name, robot["score"], robot["level"], final_fastest)
             break
             
         print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [wa/wd/sa/sd] Diagonals | [space] Pick | [q] Quit")
