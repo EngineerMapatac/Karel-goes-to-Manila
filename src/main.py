@@ -1,6 +1,6 @@
 import os
 import time
-from map_data import manila_grid
+import random
 
 # Robot State
 robot = {
@@ -9,14 +9,29 @@ robot = {
     "facing": "East",
     "packages": 0,
     "moves": 0,
-    "battery": 40
+    "battery": 40,
+    "level": 1
 }
 
-total_packages = 0
-for row in manila_grid:
-    for cell in row:
-        if cell == 2:
-            total_packages += 1
+def generate_level(level_num):
+    grid_size = 10
+    new_grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
+    
+    pkg_count = min(2 + level_num, 15)
+    total_pkgs = 0
+    while total_pkgs < pkg_count:
+        rx, ry = random.randint(0, grid_size-1), random.randint(0, grid_size-1)
+        if new_grid[ry][rx] == 0 and (rx != 1 or ry != 1):
+            new_grid[ry][rx] = 2
+            total_pkgs += 1
+            
+    barrier_count = min(3 + (level_num * 2), 30)
+    for _ in range(barrier_count):
+        rx, ry = random.randint(0, grid_size-1), random.randint(0, grid_size-1)
+        if new_grid[ry][rx] == 0 and (rx != 1 or ry != 1):
+            new_grid[ry][rx] = 1
+            
+    return new_grid, total_pkgs
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -25,10 +40,8 @@ def load_high_score():
     if os.path.exists("highscore.txt"):
         with open("highscore.txt", "r") as file:
             data = file.read().strip().split(",")
-            # Check if the file has the new time format
             if len(data) >= 3:
                 return data[0], int(data[1]), float(data[2])
-            # Fallback for the old format without time
             elif len(data) == 2:
                 return data[0], int(data[1]), 999.99
     return "No one", 0, 999.99
@@ -60,6 +73,7 @@ def main():
     player_name = input("Enter your player name: ")
     best_name, best_score, best_time = load_high_score()
     
+    manila_grid, total_packages = generate_level(robot["level"])
     start_time = time.time()
     playing = True
     
@@ -70,35 +84,42 @@ def main():
         display_best_time = best_time if best_time != 999.99 else "--"
         
         print(f"Player: {player_name}  |  High Score: {best_score} ({best_name})  |  Fastest: {display_best_time}s")
-        print(f"📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']}  |  ⏱️ Time: {current_time}s\n")
+        print(f"Level: {robot['level']}  |  📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']}  |  ⏱️ Time: {current_time}s\n")
         
         render_map(manila_grid, robot)
         
         if robot["packages"] == total_packages:
-            time_taken = round(time.time() - start_time, 2)
-            # Add a time bonus: 10 extra points for every second under 30 seconds
-            time_bonus = max(0, int((30 - time_taken) * 10))
-            final_score = (robot["battery"] * 100) + time_bonus
-            
-            print(f"\nCongratulations {player_name}! You delivered all packages!")
-            print(f"Time Taken: {time_taken}s")
-            print(f"Base Score: {robot['battery'] * 100} + Time Bonus: {time_bonus}")
-            print(f"Total Score: {final_score}")
-            
-            new_record = False
-            if final_score > best_score:
-                print("🎉 NEW HIGH SCORE! 🎉")
-                best_score = final_score
-                new_record = True
+            if robot["level"] >= 99:
+                time_taken = round(time.time() - start_time, 2)
+                time_bonus = max(0, int((300 - time_taken) * 10)) 
+                final_score = (robot["battery"] * 100) + time_bonus
                 
-            if time_taken < best_time:
-                print("⚡ NEW FASTEST TIME! ⚡")
-                best_time = time_taken
-                new_record = True
+                print(f"\nYOU BEAT LEVEL 99! GAME OVER - YOU WIN!")
+                print(f"Total Time: {time_taken}s")
+                print(f"Total Score: {final_score}")
                 
-            if new_record:
-                save_high_score(player_name, best_score, best_time)
-            break
+                new_record = False
+                if final_score > best_score:
+                    print("🎉 NEW HIGH SCORE! 🎉")
+                    best_score = final_score
+                    new_record = True
+                    
+                if time_taken < best_time:
+                    print("⚡ NEW FASTEST TIME! ⚡")
+                    best_time = time_taken
+                    new_record = True
+                    
+                if new_record:
+                    save_high_score(player_name, best_score, best_time)
+                break
+                
+            robot["level"] += 1
+            robot["battery"] += 20 
+            robot["packages"] = 0
+            robot["x"] = 1
+            robot["y"] = 1
+            manila_grid, total_packages = generate_level(robot["level"])
+            continue
             
         if robot["battery"] <= 0:
             print("\nGame Over! The robot ran out of battery.")
