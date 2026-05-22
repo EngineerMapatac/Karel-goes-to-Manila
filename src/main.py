@@ -15,7 +15,6 @@ robot = {
 }
 
 def generate_level(level_num):
-    # Randomize map size per level for more variety
     grid_size = random.randint(8, 12)
     new_grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
     
@@ -53,7 +52,11 @@ def save_high_score(name, score, time_taken):
         file.write(f"{name},{score},{time_taken}")
 
 def render_map(grid, bot):
-    icons = {"North": " 🐕 ", "South": " 🐕‍🦺", "East": " 🐩 ", "West": " 🐶 "}
+    icons = {
+        "North": " 🐕 ", "South": " 🐕‍🦺", "East": " 🐩 ", "West": " 🐶 ",
+        "North-East": " 🐩 ", "North-West": " 🐶 ", 
+        "South-East": " 🐕‍🦺", "South-West": " 🐕 "
+    }
     for row_index in range(len(grid)):
         row_string = ""
         for col_index in range(len(grid[row_index])):
@@ -74,7 +77,6 @@ def main():
     best_name, best_score, best_time = load_high_score()
     display_best_time = best_time if best_time != 999.99 else "--"
     
-    # Display the high score champion prior to the beginning of the game
     print("========================================")
     print("   WELCOME TO KAREL GOES TO MANILA")
     print("            ENDLESS MODE")
@@ -133,7 +135,7 @@ def main():
                 save_high_score(player_name, robot["score"], best_time)
             break
             
-        print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [spacebar] Pick Package | [q] Quit")
+        print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [wa/wd/sa/sd] Diagonals | [space] Pick | [q] Quit")
         action = input("Enter command: ").lower()
         
         if action == 'q':
@@ -164,6 +166,38 @@ def main():
         elif action == 'd': 
             robot["facing"] = "East"
             if robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"]][robot["x"] + 1] != 1:
+                robot["x"] += 1
+                robot["moves"] += 1
+                robot["battery"] -= 1
+
+        elif action in ['wa', 'aw']: 
+            robot["facing"] = "North-West"
+            if robot["y"] > 0 and robot["x"] > 0 and manila_grid[robot["y"] - 1][robot["x"] - 1] != 1:
+                robot["y"] -= 1
+                robot["x"] -= 1
+                robot["moves"] += 1
+                robot["battery"] -= 1
+
+        elif action in ['wd', 'dw']: 
+            robot["facing"] = "North-East"
+            if robot["y"] > 0 and robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"] - 1][robot["x"] + 1] != 1:
+                robot["y"] -= 1
+                robot["x"] += 1
+                robot["moves"] += 1
+                robot["battery"] -= 1
+
+        elif action in ['sa', 'as']: 
+            robot["facing"] = "South-West"
+            if robot["y"] < len(manila_grid) - 1 and robot["x"] > 0 and manila_grid[robot["y"] + 1][robot["x"] - 1] != 1:
+                robot["y"] += 1
+                robot["x"] -= 1
+                robot["moves"] += 1
+                robot["battery"] -= 1
+
+        elif action in ['sd', 'ds']: 
+            robot["facing"] = "South-East"
+            if robot["y"] < len(manila_grid) - 1 and robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"] + 1][robot["x"] + 1] != 1:
+                robot["y"] += 1
                 robot["x"] += 1
                 robot["moves"] += 1
                 robot["battery"] -= 1
