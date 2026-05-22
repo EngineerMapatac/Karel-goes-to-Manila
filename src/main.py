@@ -70,7 +70,7 @@ def save_score(name, score, level, time_taken):
 
 def render_map(grid, bot):
     icons = {
-        "North": " 🐕 ", "South": " 🐕‍🦺", "East": " 🐩 ", "West": " 🐶 ",
+        "North": " 🐕 ", "South": " 🐕‍🦺 ", "East": " 🐩 ", "West": " 🐶 ",
         "North-East": " 🐩 ", "North-West": " 🐶 ", 
         "South-East": " 🐕‍🦺", "South-West": " 🐕 "
     }
