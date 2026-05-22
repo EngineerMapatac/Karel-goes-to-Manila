@@ -10,11 +10,13 @@ robot = {
     "packages": 0,
     "moves": 0,
     "battery": 40,
-    "level": 1
+    "level": 1,
+    "score": 0
 }
 
 def generate_level(level_num):
-    grid_size = 10
+    # Randomize map size per level for more variety
+    grid_size = random.randint(8, 12)
     new_grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
     
     pkg_count = min(2 + level_num, 15)
@@ -25,7 +27,7 @@ def generate_level(level_num):
             new_grid[ry][rx] = 2
             total_pkgs += 1
             
-    barrier_count = min(3 + (level_num * 2), 30)
+    barrier_count = min(3 + (level_num * 2), int((grid_size * grid_size) * 0.3))
     for _ in range(barrier_count):
         rx, ry = random.randint(0, grid_size-1), random.randint(0, grid_size-1)
         if new_grid[ry][rx] == 0 and (rx != 1 or ry != 1):
@@ -69,60 +71,66 @@ def render_map(grid, bot):
 
 def main():
     clear_screen()
-    print("Welcome to Karel Goes to Manila!")
-    player_name = input("Enter your player name: ")
     best_name, best_score, best_time = load_high_score()
+    display_best_time = best_time if best_time != 999.99 else "--"
+    
+    # Display the high score champion prior to the beginning of the game
+    print("========================================")
+    print("   WELCOME TO KAREL GOES TO MANILA")
+    print("            ENDLESS MODE")
+    print("========================================")
+    print(f"🏆 Current Champion: {best_name}")
+    print(f"⭐ Highest Score: {best_score}")
+    print(f"⚡ Fastest Level: {display_best_time}s")
+    print("========================================\n")
+    
+    player_name = input("Enter your player name: ")
     
     manila_grid, total_packages = generate_level(robot["level"])
-    start_time = time.time()
+    level_start_time = time.time()
     playing = True
     
     while playing:
-        current_time = round(time.time() - start_time, 2)
+        current_time = round(time.time() - level_start_time, 2)
         clear_screen()
         
-        display_best_time = best_time if best_time != 999.99 else "--"
-        
-        print(f"Player: {player_name}  |  High Score: {best_score} ({best_name})  |  Fastest: {display_best_time}s")
+        print(f"Player: {player_name}  |  Total Score: {robot['score']}")
         print(f"Level: {robot['level']}  |  📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']}  |  ⏱️ Time: {current_time}s\n")
         
         render_map(manila_grid, robot)
         
         if robot["packages"] == total_packages:
-            if robot["level"] >= 99:
-                time_taken = round(time.time() - start_time, 2)
-                time_bonus = max(0, int((300 - time_taken) * 10)) 
-                final_score = (robot["battery"] * 100) + time_bonus
-                
-                print(f"\nYOU BEAT LEVEL 99! GAME OVER - YOU WIN!")
-                print(f"Total Time: {time_taken}s")
-                print(f"Total Score: {final_score}")
-                
-                new_record = False
-                if final_score > best_score:
-                    print("🎉 NEW HIGH SCORE! 🎉")
-                    best_score = final_score
-                    new_record = True
-                    
-                if time_taken < best_time:
-                    print("⚡ NEW FASTEST TIME! ⚡")
-                    best_time = time_taken
-                    new_record = True
-                    
-                if new_record:
-                    save_high_score(player_name, best_score, best_time)
-                break
-                
+            time_taken = round(time.time() - level_start_time, 2)
+            time_bonus = max(0, int((30 - time_taken) * 10))
+            level_points = (robot["battery"] * 10) + time_bonus
+            robot["score"] += level_points
+            
+            print(f"\nLevel {robot['level']} Cleared in {time_taken}s!")
+            print(f"Points Earned: {level_points} (Total: {robot['score']})")
+            
+            if time_taken < best_time:
+                print("⚡ NEW FASTEST LEVEL TIME! ⚡")
+                best_time = time_taken
+                save_high_score(best_name, best_score, best_time)
+            
+            time.sleep(2)
+            
             robot["level"] += 1
             robot["battery"] += 20 
             robot["packages"] = 0
             robot["x"] = 1
             robot["y"] = 1
             manila_grid, total_packages = generate_level(robot["level"])
+            level_start_time = time.time()
             continue
             
         if robot["battery"] <= 0:
-            print("\nGame Over! The robot ran out of battery.")
+            print(f"\nGame Over! The robot ran out of battery at Level {robot['level']}.")
+            print(f"Final Score: {robot['score']}")
+            
+            if robot["score"] > best_score:
+                print("🎉 NEW HIGH SCORE! 🎉")
+                save_high_score(player_name, robot["score"], best_time)
             break
             
         print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [spacebar] Pick Package | [q] Quit")
