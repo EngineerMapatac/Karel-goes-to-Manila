@@ -5,7 +5,8 @@ from map_data import manila_grid
 robot = {
     "x": 1,
     "y": 1,
-    "packages": 0
+    "packages": 0,
+    "moves": 0
 }
 
 # Calculate total packages on the map dynamically
@@ -23,7 +24,7 @@ def render_map(grid, bot):
         row_string = ""
         for col_index in range(len(grid[row_index])):
             if col_index == bot["x"] and row_index == bot["y"]:
-                row_string += " 🤖 "
+                row_string += " 🐶 "
             else:
                 cell = grid[row_index][col_index]
                 if cell == 0:
@@ -39,13 +40,13 @@ def main():
     
     while playing:
         clear_screen()
-        print(f"📦 Packages Collected: {robot['packages']} / {total_packages}\n")
+        print(f"📦 Packages: {robot['packages']} / {total_packages}  |  👣 Moves: {robot['moves']}\n")
         
         render_map(manila_grid, robot)
         
         # Win condition check
         if robot["packages"] == total_packages:
-            print("\nCongratulations! You successfully delivered all packages across Metro Manila!")
+            print(f"\nCongratulations! You delivered all packages across Metro Manila in {robot['moves']} moves!")
             break
             
         print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [p] Pick Package | [q] Quit")
@@ -59,15 +60,19 @@ def main():
         elif action == 'w': 
             if robot["y"] > 0 and manila_grid[robot["y"] - 1][robot["x"]] != 1:
                 robot["y"] -= 1
+                robot["moves"] += 1
         elif action == 's': 
             if robot["y"] < len(manila_grid) - 1 and manila_grid[robot["y"] + 1][robot["x"]] != 1:
                 robot["y"] += 1
+                robot["moves"] += 1
         elif action == 'a': 
             if robot["x"] > 0 and manila_grid[robot["y"]][robot["x"] - 1] != 1:
                 robot["x"] -= 1
+                robot["moves"] += 1
         elif action == 'd': 
             if robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"]][robot["x"] + 1] != 1:
                 robot["x"] += 1
+                robot["moves"] += 1
         elif action == 'p': 
             if manila_grid[robot["y"]][robot["x"]] == 2:
                 manila_grid[robot["y"]][robot["x"]] = 0
