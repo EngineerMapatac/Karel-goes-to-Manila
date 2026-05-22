@@ -32,7 +32,6 @@ def generate_level(level_num):
         if new_grid[ry][rx] == 0 and (rx != 1 or ry != 1):
             new_grid[ry][rx] = 1
             
-    # Dynamic battery calculation based on difficulty
     level_battery = 30 + (grid_size * 2) + (total_pkgs * 5)
             
     return new_grid, total_pkgs, level_battery
@@ -40,7 +39,7 @@ def generate_level(level_num):
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def load_high_scores():
+def load_all_scores():
     scores = []
     if os.path.exists("highscore.txt"):
         with open("highscore.txt", "r") as file:
@@ -49,13 +48,12 @@ def load_high_scores():
                 if len(data) == 4:
                     scores.append((data[0], int(data[1]), int(data[2]), float(data[3])))
     scores.sort(key=lambda x: x[1], reverse=True)
-    return scores[:5]
+    return scores
 
-def check_and_save_score(name, score, level, time_taken):
-    scores = load_high_scores()
+def save_score(name, score, level, time_taken):
+    scores = load_all_scores()
     scores.append((name, score, level, time_taken))
     scores.sort(key=lambda x: x[1], reverse=True)
-    scores = scores[:5]
     
     with open("highscore.txt", "w") as file:
         for item in scores:
@@ -84,20 +82,28 @@ def render_map(grid, bot):
 
 def main():
     clear_screen()
-    high_scores = load_high_scores()
+    all_scores = load_all_scores()
     
     print("====================================================")
     print("         WELCOME TO KAREL GOES TO MANILA")
     print("                  ENDLESS MODE")
     print("====================================================")
-    print("🏆 TOP 5 LEADERBOARD:")
+    
+    if all_scores:
+        champ = all_scores[0]
+        print(f"🏆 ALL-TIME CHAMPION: {champ[0]} with {champ[1]} points! 🏆")
+    else:
+        print("🏆 ALL-TIME CHAMPION: No one yet! 🏆")
+        
+    print("====================================================")
+    print("ALL PLAYERS LEADERBOARD:")
     print(f"{'Rank':<5} {'Player':<15} {'Score':<10} {'Level':<8} {'Speed':<8}")
     print("-" * 52)
     
-    if not high_scores:
+    if not all_scores:
         print("No records yet! Be the first one to set a score.")
     else:
-        for i, (name, score, lvl, t_taken) in enumerate(high_scores, 1):
+        for i, (name, score, lvl, t_taken) in enumerate(all_scores, 1):
             print(f"{i:<5} {name:<15} {score:<10} {lvl:<8} {t_taken}s")
             
     print("====================================================\n")
@@ -115,7 +121,7 @@ def main():
         current_time = round(time.time() - level_start_time, 2)
         clear_screen()
         
-        top_score_display = high_scores[0][1] if high_scores else 0
+        top_score_display = all_scores[0][1] if all_scores else 0
         
         print(f"Player: {player_name}  |  Current Score: {robot['score']}  |  Target High Score: {top_score_display}")
         print(f"Level: {robot['level']}  |  📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']} / {current_max_battery}  |  ⏱️ Time: {current_time}s\n")
@@ -149,7 +155,7 @@ def main():
             print(f"Final Score: {robot['score']}")
             
             final_fastest = fastest_level_time if fastest_level_time != 999.99 else current_time
-            check_and_save_score(player_name, robot["score"], robot["level"], final_fastest)
+            save_score(player_name, robot["score"], robot["level"], final_fastest)
             break
             
         print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [wa/wd/sa/sd] Diagonals | [space] Pick | [q] Quit")
