@@ -72,7 +72,7 @@ def render_map(grid, bot):
     icons = {
         "North": " 🐕 ", "South": " 🐕‍🦺 ", "East": " 🐩 ", "West": " 🐶 ",
         "North-East": " 🐩 ", "North-West": " 🐶 ", 
-        "South-East": " 🐕‍🦺", "South-West": " 🐕 "
+        "South-East": " 🐕‍🦺 ", "South-West": " 🐕 "
     }
     for row_index in range(len(grid)):
         row_string = ""
@@ -173,6 +173,8 @@ def main():
         if action == 'q':
             playing = False
             print("Shutting down robot. Goodbye!")
+            final_fastest = fastest_level_time if fastest_level_time != 999.99 else current_time
+            save_score(player_name, robot["score"], robot["level"], final_fastest)
             
         elif action == 'w': 
             robot["facing"] = "North"
