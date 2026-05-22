@@ -9,17 +9,15 @@ robot = {
     "facing": "East",
     "packages": 0,
     "moves": 0,
-    "battery": 40,
+    "battery": 0,
     "level": 1,
     "score": 0
 }
 
 def generate_level(level_num):
-    # Difficulty scales up: Map size grows up to 15x15 based on level
     grid_size = min(8 + (level_num // 2), 15)
     new_grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
     
-    # Packages increase slowly so it's still possible with 40 battery
     pkg_count = min(2 + (level_num // 3), 8)
     total_pkgs = 0
     while total_pkgs < pkg_count:
@@ -28,14 +26,16 @@ def generate_level(level_num):
             new_grid[ry][rx] = 2
             total_pkgs += 1
             
-    # Barriers increase significantly to make pathfinding harder
     barrier_count = min(5 + (level_num * 3), int((grid_size * grid_size) * 0.4))
     for _ in range(barrier_count):
         rx, ry = random.randint(0, grid_size-1), random.randint(0, grid_size-1)
         if new_grid[ry][rx] == 0 and (rx != 1 or ry != 1):
             new_grid[ry][rx] = 1
             
-    return new_grid, total_pkgs
+    # Dynamic battery calculation based on difficulty
+    level_battery = 30 + (grid_size * 2) + (total_pkgs * 5)
+            
+    return new_grid, total_pkgs, level_battery
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -48,7 +48,6 @@ def load_high_scores():
                 data = line.strip().split(",")
                 if len(data) == 4:
                     scores.append((data[0], int(data[1]), int(data[2]), float(data[3])))
-    # Sort by score descending (Player with higher score ranks higher regardless of level)
     scores.sort(key=lambda x: x[1], reverse=True)
     return scores[:5]
 
@@ -105,7 +104,8 @@ def main():
     
     player_name = input("Enter your player name: ")
     
-    manila_grid, total_packages = generate_level(robot["level"])
+    manila_grid, total_packages, current_max_battery = generate_level(robot["level"])
+    robot["battery"] = current_max_battery
     level_start_time = time.time()
     playing = True
     
@@ -118,7 +118,7 @@ def main():
         top_score_display = high_scores[0][1] if high_scores else 0
         
         print(f"Player: {player_name}  |  Current Score: {robot['score']}  |  Target High Score: {top_score_display}")
-        print(f"Level: {robot['level']}  |  📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']}  |  ⏱️ Time: {current_time}s\n")
+        print(f"Level: {robot['level']}  |  📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']} / {current_max_battery}  |  ⏱️ Time: {current_time}s\n")
         
         render_map(manila_grid, robot)
         
@@ -136,11 +136,11 @@ def main():
             time.sleep(2)
             
             robot["level"] += 1
-            robot["battery"] = 40  # Reset to exactly 40 for every new level
             robot["packages"] = 0
             robot["x"] = 1
             robot["y"] = 1
-            manila_grid, total_packages = generate_level(robot["level"])
+            manila_grid, total_packages, current_max_battery = generate_level(robot["level"])
+            robot["battery"] = current_max_battery
             level_start_time = time.time()
             continue
             
