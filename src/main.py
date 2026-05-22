@@ -1,7 +1,7 @@
 import os
 from map_data import manila_grid
 
-# Robot State with directional facing
+# Robot State
 robot = {
     "x": 1,
     "y": 1,
@@ -20,7 +20,6 @@ def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def render_map(grid, bot):
-    # Emojis represent Karel facing North, South, East, West
     icons = {"North": " 🐕 ", "South": " 🐕‍🦺", "East": " 🐩 ", "West": " 🐶 "}
     
     for row_index in range(len(grid)):
@@ -43,7 +42,7 @@ def main():
     
     while playing:
         clear_screen()
-        print(f"📦 Packages: {robot['packages']} / {total_packages}  |  👣 Moves: {robot['moves']}  |  🧭 Facing: {robot['facing']}\n")
+        print(f"📦 Packages: {robot['packages']} / {total_packages}  |  👣 Moves: {robot['moves']}\n")
         
         render_map(manila_grid, robot)
         
@@ -51,52 +50,41 @@ def main():
             print(f"\nCongratulations! You delivered all packages across Metro Manila in {robot['moves']} moves!")
             break
             
-        print("\nCommands: [m] Move Forward | [l] Turn Left | [p] Pick Package | [d] Drop Package | [q] Quit")
+        print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [spacebar] Pick Package | [q] Quit")
         action = input("Enter command: ").lower()
         
         if action == 'q':
             playing = False
             print("Shutting down robot. Goodbye!")
             
-        # Core Karel feature: Turn Left
-        elif action == 'l': 
-            directions = ["North", "West", "South", "East"]
-            current_idx = directions.index(robot["facing"])
-            robot["facing"] = directions[(current_idx + 1) % 4]
-            robot["moves"] += 1
-            
-        # Core Karel feature: Move Forward based on facing direction
-        elif action == 'm': 
-            next_x = robot["x"]
-            next_y = robot["y"]
-            
-            if robot["facing"] == "North": 
-                next_y -= 1
-            elif robot["facing"] == "South": 
-                next_y += 1
-            elif robot["facing"] == "East": 
-                next_x += 1
-            elif robot["facing"] == "West": 
-                next_x -= 1
-            
-            # Boundary and wall collision check
-            if 0 <= next_y < len(manila_grid) and 0 <= next_x < len(manila_grid[0]):
-                if manila_grid[next_y][next_x] != 1:
-                    robot["x"] = next_x
-                    robot["y"] = next_y
-                    robot["moves"] += 1
-                    
-        # Core Karel feature: Pick Beeper (Package)
-        elif action == 'p': 
+        elif action == 'w': 
+            robot["facing"] = "North"
+            if robot["y"] > 0 and manila_grid[robot["y"] - 1][robot["x"]] != 1:
+                robot["y"] -= 1
+                robot["moves"] += 1
+                
+        elif action == 's': 
+            robot["facing"] = "South"
+            if robot["y"] < len(manila_grid) - 1 and manila_grid[robot["y"] + 1][robot["x"]] != 1:
+                robot["y"] += 1
+                robot["moves"] += 1
+                
+        elif action == 'a': 
+            robot["facing"] = "West"
+            if robot["x"] > 0 and manila_grid[robot["y"]][robot["x"] - 1] != 1:
+                robot["x"] -= 1
+                robot["moves"] += 1
+                
+        elif action == 'd': 
+            robot["facing"] = "East"
+            if robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"]][robot["x"] + 1] != 1:
+                robot["x"] += 1
+                robot["moves"] += 1
+                
+        elif action == ' ': 
             if manila_grid[robot["y"]][robot["x"]] == 2:
                 manila_grid[robot["y"]][robot["x"]] = 0
                 robot["packages"] += 1
-                
-        # Core Karel feature: Put Beeper (Drop Package)
-        elif action == 'd': 
-            if robot["packages"] > 0 and manila_grid[robot["y"]][robot["x"]] == 0:
-                manila_grid[robot["y"]][robot["x"]] = 2
-                robot["packages"] -= 1
 
 if __name__ == "__main__":
     main()
