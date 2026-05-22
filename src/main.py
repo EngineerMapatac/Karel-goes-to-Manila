@@ -15,10 +15,12 @@ robot = {
 }
 
 def generate_level(level_num):
-    grid_size = random.randint(8, 12)
+    # Difficulty scales up: Map size grows up to 15x15 based on level
+    grid_size = min(8 + (level_num // 2), 15)
     new_grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
     
-    pkg_count = min(2 + level_num, 15)
+    # Packages increase slowly so it's still possible with 40 battery
+    pkg_count = min(2 + (level_num // 3), 8)
     total_pkgs = 0
     while total_pkgs < pkg_count:
         rx, ry = random.randint(0, grid_size-1), random.randint(0, grid_size-1)
@@ -26,7 +28,8 @@ def generate_level(level_num):
             new_grid[ry][rx] = 2
             total_pkgs += 1
             
-    barrier_count = min(3 + (level_num * 2), int((grid_size * grid_size) * 0.3))
+    # Barriers increase significantly to make pathfinding harder
+    barrier_count = min(5 + (level_num * 3), int((grid_size * grid_size) * 0.4))
     for _ in range(barrier_count):
         rx, ry = random.randint(0, grid_size-1), random.randint(0, grid_size-1)
         if new_grid[ry][rx] == 0 and (rx != 1 or ry != 1):
@@ -44,16 +47,14 @@ def load_high_scores():
             for line in file:
                 data = line.strip().split(",")
                 if len(data) == 4:
-                    # format: name, score, level, time_taken
                     scores.append((data[0], int(data[1]), int(data[2]), float(data[3])))
-    # Sort by score descending
+    # Sort by score descending (Player with higher score ranks higher regardless of level)
     scores.sort(key=lambda x: x[1], reverse=True)
     return scores[:5]
 
 def check_and_save_score(name, score, level, time_taken):
     scores = load_high_scores()
     scores.append((name, score, level, time_taken))
-    # Sort and slice to keep top 5
     scores.sort(key=lambda x: x[1], reverse=True)
     scores = scores[:5]
     
@@ -108,7 +109,6 @@ def main():
     level_start_time = time.time()
     playing = True
     
-    # Store fastest single level time dynamically during this run
     fastest_level_time = 999.99
     
     while playing:
@@ -136,7 +136,7 @@ def main():
             time.sleep(2)
             
             robot["level"] += 1
-            robot["battery"] += 20 
+            robot["battery"] = 40  # Reset to exactly 40 for every new level
             robot["packages"] = 0
             robot["x"] = 1
             robot["y"] = 1
@@ -148,7 +148,6 @@ def main():
             print(f"\nGame Over! The robot ran out of battery at Level {robot['level']}.")
             print(f"Final Score: {robot['score']}")
             
-            # Save and check standing
             final_fastest = fastest_level_time if fastest_level_time != 999.99 else current_time
             check_and_save_score(player_name, robot["score"], robot["level"], final_fastest)
             break
