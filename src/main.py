@@ -81,7 +81,7 @@ def main():
                 robot["x"] += 1
                 robot["moves"] += 1
                 
-        elif action == ' ': 
+        elif action == ' ' or action == 'p' or action == '': 
             if manila_grid[robot["y"]][robot["x"]] == 2:
                 manila_grid[robot["y"]][robot["x"]] = 0
                 robot["packages"] += 1
