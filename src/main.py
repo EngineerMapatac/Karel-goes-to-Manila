@@ -50,7 +50,7 @@ def main():
             print(f"\nCongratulations! You delivered all packages across Metro Manila in {robot['moves']} moves!")
             break
             
-        print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [spacebar] Pick Package | [q] Quit")
+        print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [p] Pick Package | [q] Quit")
         action = input("Enter command: ").lower()
         
         if action == 'q':
