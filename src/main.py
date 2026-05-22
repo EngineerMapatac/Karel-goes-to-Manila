@@ -58,6 +58,14 @@ def save_score(name, score, level, time_taken):
     with open("highscore.txt", "w") as file:
         for item in scores:
             file.write(f"{item[0]},{item[1]},{item[2]},{item[3]}\n")
+            
+    try:
+        subprocess.run(["git", "add", "highscore.txt"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "commit", "-m", f"Auto-update highscore for {name}"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "push"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("\nScore successfully synced to GitHub!")
+    except Exception:
+        print("\nLocal score saved, but could not sync to GitHub (Git authentication required).")
 
 def render_map(grid, bot):
     icons = {
