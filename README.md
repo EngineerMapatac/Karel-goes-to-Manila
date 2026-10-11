@@ -38,15 +38,34 @@ The game heavily rewards routing efficiency and speed across multiple levels.
    python src/main.py
 ```
 
+### Graphical Mode
+
+The game also includes a graphical Pygame version. Install its dependency and run:
+
+```bash
+python -m pip install -r requirements.txt
+python src/pygame_game.py
+```
+
+Use `W`, `A`, `S`, and `D` to move, `Space` or `P` to collect a package, `R` to
+restart after a game over, and `Q` to quit. The original terminal mode does not
+require Pygame.
+
+NumPy is not required for rendering. It would be useful as a later addition for
+AI pathfinding or fast grid calculations, while Pygame handles the window,
+keyboard input, and drawing.
+
 ## Repository Structure
 
 ```
 karel-goes-to-manila/
 ├── src/
 │   ├── main.py         # The core game loop, input handling, and rendering
+│   ├── pygame_game.py  # Optional graphical version
 │   └── map_data.py     # 2D list matrix defining the urban grid
+├── requirements.txt    # Graphical-mode dependency
 └── README.md
-``` 
+```
 
 
 ## Acknowledgments
