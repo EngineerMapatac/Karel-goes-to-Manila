@@ -1,245 +1,109 @@
-import os
-import time
-import random
-import subprocess
+import pygame
+from pygame.locals import *
+from OpenGL.GL import *
+from OpenGL.GLU import *
 
-# Robot State
-robot = {
-    "x": 1,
-    "y": 1,
-    "facing": "East",
-    "packages": 0,
-    "moves": 0,
-    "battery": 0,
-    "level": 1,
-    "score": 0
-}
+# Manila Grid Dimensions
+GRID_SIZE = 10
 
-def generate_level(level_num):
-    grid_size = min(8 + (level_num // 2), 15)
-    new_grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
+def draw_cube(x, y, z, size=0.4, color=(0.2, 0.6, 1.0)):
+    """Draws a solid colored cube centered at (x, y, z)."""
+    glPushMatrix()
+    glTranslatef(x, y, z)
+    glColor3f(*color)
     
-    pkg_count = min(2 + (level_num // 3), 8)
-    total_pkgs = 0
-    while total_pkgs < pkg_count:
-        rx, ry = random.randint(0, grid_size-1), random.randint(0, grid_size-1)
-        if new_grid[ry][rx] == 0 and (rx != 1 or ry != 1):
-            new_grid[ry][rx] = 2
-            total_pkgs += 1
-            
-    barrier_count = min(5 + (level_num * 3), int((grid_size * grid_size) * 0.4))
-    for _ in range(barrier_count):
-        rx, ry = random.randint(0, grid_size-1), random.randint(0, grid_size-1)
-        if new_grid[ry][rx] == 0 and (rx != 1 or ry != 1):
-            new_grid[ry][rx] = 1
-            
-    level_battery = 30 + (grid_size * 2) + (total_pkgs * 5)
-            
-    return new_grid, total_pkgs, level_battery
+    s = size
+    glBegin(GL_QUADS)
+    # Front
+    glVertex3f(-s, -s,  s); glVertex3f( s, -s,  s); glVertex3f( s,  s,  s); glVertex3f(-s,  s,  s)
+    # Back
+    glVertex3f(-s, -s, -s); glVertex3f(-s,  s, -s); glVertex3f( s,  s, -s); glVertex3f( s, -s, -s)
+    # Top
+    glVertex3f(-s,  s, -s); glVertex3f(-s,  s,  s); glVertex3f( s,  s,  s); glVertex3f( s,  s, -s)
+    # Bottom
+    glVertex3f(-s, -s, -s); glVertex3f( s, -s, -s); glVertex3f( s, -s,  s); glVertex3f(-s, -s,  s)
+    # Right
+    glVertex3f( s, -s, -s); glVertex3f( s,  s, -s); glVertex3f( s,  s,  s); glVertex3f( s, -s,  s)
+    # Left
+    glVertex3f(-s, -s, -s); glVertex3f(-s, -s,  s); glVertex3f(-s,  s,  s); glVertex3f(-s,  s, -s)
+    glEnd()
+    glPopMatrix()
 
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-def load_all_scores():
-    scores = []
-    if os.path.exists("highscore.txt"):
-        with open("highscore.txt", "r") as file:
-            for line in file:
-                data = line.strip().split(",")
-                if len(data) == 4:
-                    scores.append((data[0], int(data[1]), int(data[2]), float(data[3])))
-    scores.sort(key=lambda x: x[1], reverse=True)
-    return scores
-
-def save_score(name, score, level, time_taken):
-    scores = load_all_scores()
-    scores.append((name, score, level, time_taken))
-    scores.sort(key=lambda x: x[1], reverse=True)
-    
-    with open("highscore.txt", "w") as file:
-        for item in scores:
-            file.write(f"{item[0]},{item[1]},{item[2]},{item[3]}\n")
-            
-    try:
-        subprocess.run(["git", "add", "highscore.txt"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "commit", "-m", f"Auto-update highscore for {name}"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "push"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print("\nScore successfully synced to GitHub!")
-    except Exception:
-        print("\nLocal score saved, but could not sync to GitHub (Git authentication required).")
-
-def render_map(grid, bot):
-    icons = {
-        "North": " 🐕 ", "South": " 🐕‍🦺 ", "East": " 🐩 ", "West": " 🐶 ",
-        "North-East": " 🐩 ", "North-West": " 🐶 ", 
-        "South-East": " 🐕‍🦺 ", "South-West": " 🐕 "
-    }
-    for row_index in range(len(grid)):
-        row_string = ""
-        for col_index in range(len(grid[row_index])):
-            if col_index == bot["x"] and row_index == bot["y"]:
-                row_string += icons[bot["facing"]]
-            else:
-                cell = grid[row_index][col_index]
-                if cell == 0:
-                    row_string += " .  "
-                elif cell == 1:
-                    row_string += " 🚧 "
-                elif cell == 2:
-                    row_string += " 📦 "
-        print(row_string)
+def draw_grid():
+    """Renders the Manila street intersection grid lines."""
+    glColor3f(0.3, 0.3, 0.3)
+    glBegin(GL_LINES)
+    for i in range(GRID_SIZE + 1):
+        # Horizontal street lines
+        glVertex3f(0, 0, i)
+        glVertex3f(GRID_SIZE, 0, i)
+        # Vertical avenue lines
+        glVertex3f(i, 0, 0)
+        glVertex3f(i, 0, GRID_SIZE)
+    glEnd()
 
 def main():
-    clear_screen()
-    all_scores = load_all_scores()
-    
-    print("====================================================")
-    print("         WELCOME TO KAREL GOES TO MANILA")
-    print("                  ENDLESS MODE")
-    print("====================================================")
-    
-    if all_scores:
-        champ = all_scores[0]
-        print(f"🏆 ALL-TIME CHAMPION: {champ[0]} with {champ[1]} points! 🏆")
-    else:
-        print("🏆 ALL-TIME CHAMPION: No one yet! 🏆")
-        
-    print("====================================================")
-    print("ALL PLAYERS LEADERBOARD:")
-    print(f"{'Rank':<5} {'Player':<15} {'Score':<10} {'Level':<8} {'Speed':<8}")
-    print("-" * 52)
-    
-    if not all_scores:
-        print("No records yet! Be the first one to set a score.")
-    else:
-        for i, (name, score, lvl, t_taken) in enumerate(all_scores, 1):
-            print(f"{i:<5} {name:<15} {score:<10} {lvl:<8} {t_taken}s")
-            
-    print("====================================================\n")
-    
-    player_name = input("Enter your player name: ")
-    
-    manila_grid, total_packages, current_max_battery = generate_level(robot["level"])
-    robot["battery"] = current_max_battery
-    level_start_time = time.time()
-    playing = True
-    
-    fastest_level_time = 999.99
-    
-    while playing:
-        current_time = round(time.time() - level_start_time, 2)
-        clear_screen()
-        
-        top_score_display = all_scores[0][1] if all_scores else 0
-        
-        print(f"Player: {player_name}  |  Current Score: {robot['score']}  |  Target High Score: {top_score_display}")
-        print(f"Level: {robot['level']}  |  📦 Packages: {robot['packages']} / {total_packages}  |  🔋 Battery: {robot['battery']} / {current_max_battery}  |  ⏱️ Time: {current_time}s\n")
-        
-        render_map(manila_grid, robot)
-        
-        if robot["packages"] == total_packages:
-            time_taken = round(time.time() - level_start_time, 2)
-            time_bonus = max(0, int((30 - time_taken) * 10))
-            level_points = (robot["battery"] * 10) + time_bonus
-            robot["score"] += level_points
-            
-            if time_taken < fastest_level_time:
-                fastest_level_time = time_taken
-            
-            print(f"\nLevel {robot['level']} Cleared in {time_taken}s!")
-            print(f"Points Earned: {level_points} (Total: {robot['score']})")
-            time.sleep(2)
-            
-            robot["level"] += 1
-            robot["packages"] = 0
-            robot["x"] = 1
-            robot["y"] = 1
-            manila_grid, total_packages, current_max_battery = generate_level(robot["level"])
-            robot["battery"] = current_max_battery
-            level_start_time = time.time()
-            continue
-            
-        if robot["battery"] <= 0:
-            print(f"\nGame Over! The robot ran out of battery at Level {robot['level']}.")
-            print(f"Final Score: {robot['score']}")
-            
-            final_fastest = fastest_level_time if fastest_level_time != 999.99 else current_time
-            save_score(player_name, robot["score"], robot["level"], final_fastest)
-            break
-            
-        print("\nCommands: [w] Up | [s] Down | [a] Left | [d] Right | [wa/wd/sa/sd] Diagonals | [space] Pick | [q] Quit")
-        action = input("Enter command: ").lower()
-        
-        if action == 'q':
-            playing = False
-            print("Shutting down robot. Goodbye!")
-            final_fastest = fastest_level_time if fastest_level_time != 999.99 else current_time
-            save_score(player_name, robot["score"], robot["level"], final_fastest)
-            
-        elif action == 'w': 
-            robot["facing"] = "North"
-            if robot["y"] > 0 and manila_grid[robot["y"] - 1][robot["x"]] != 1:
-                robot["y"] -= 1
-                robot["moves"] += 1
-                robot["battery"] -= 1
-                
-        elif action == 's': 
-            robot["facing"] = "South"
-            if robot["y"] < len(manila_grid) - 1 and manila_grid[robot["y"] + 1][robot["x"]] != 1:
-                robot["y"] += 1
-                robot["moves"] += 1
-                robot["battery"] -= 1
-                
-        elif action == 'a': 
-            robot["facing"] = "West"
-            if robot["x"] > 0 and manila_grid[robot["y"]][robot["x"] - 1] != 1:
-                robot["x"] -= 1
-                robot["moves"] += 1
-                robot["battery"] -= 1
-                
-        elif action == 'd': 
-            robot["facing"] = "East"
-            if robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"]][robot["x"] + 1] != 1:
-                robot["x"] += 1
-                robot["moves"] += 1
-                robot["battery"] -= 1
+    pygame.init()
+    display = (1000, 700)
+    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+    pygame.display.set_caption("Karel Goes to Manila - 3D Prototype")
 
-        elif action in ['wa', 'aw']: 
-            robot["facing"] = "North-West"
-            if robot["y"] > 0 and robot["x"] > 0 and manila_grid[robot["y"] - 1][robot["x"] - 1] != 1:
-                robot["y"] -= 1
-                robot["x"] -= 1
-                robot["moves"] += 1
-                robot["battery"] -= 1
+    # Perspective & Camera Setup
+    glMatrixMode(GL_PROJECTION)
+    gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
+    glMatrixMode(GL_MODELVIEW)
+    glEnable(GL_DEPTH_TEST)
 
-        elif action in ['wd', 'dw']: 
-            robot["facing"] = "North-East"
-            if robot["y"] > 0 and robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"] - 1][robot["x"] + 1] != 1:
-                robot["y"] -= 1
-                robot["x"] += 1
-                robot["moves"] += 1
-                robot["battery"] -= 1
+    # Karel State
+    karel_x, karel_z = 0, 0
+    beepers = [(2, 3), (5, 5), (7, 1)]
 
-        elif action in ['sa', 'as']: 
-            robot["facing"] = "South-West"
-            if robot["y"] < len(manila_grid) - 1 and robot["x"] > 0 and manila_grid[robot["y"] + 1][robot["x"] - 1] != 1:
-                robot["y"] += 1
-                robot["x"] -= 1
-                robot["moves"] += 1
-                robot["battery"] -= 1
+    clock = pygame.time.Clock()
 
-        elif action in ['sd', 'ds']: 
-            robot["facing"] = "South-East"
-            if robot["y"] < len(manila_grid) - 1 and robot["x"] < len(manila_grid[0]) - 1 and manila_grid[robot["y"] + 1][robot["x"] + 1] != 1:
-                robot["y"] += 1
-                robot["x"] += 1
-                robot["moves"] += 1
-                robot["battery"] -= 1
-                
-        elif action == ' ' or action == 'p' or action == '': 
-            if manila_grid[robot["y"]][robot["x"]] == 2:
-                manila_grid[robot["y"]][robot["x"]] = 0
-                robot["packages"] += 1
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    running = False
+                elif event.key == K_UP and karel_z < GRID_SIZE:
+                    karel_z += 1
+                elif event.key == K_DOWN and karel_z > 0:
+                    karel_z -= 1
+                elif event.key == K_LEFT and karel_x > 0:
+                    karel_x -= 1
+                elif event.key == K_RIGHT and karel_x < GRID_SIZE:
+                    karel_x += 1
+                elif event.key == K_SPACE:
+                    # Pick up beeper
+                    if (karel_x, karel_z) in beepers:
+                        beepers.remove((karel_x, karel_z))
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glLoadIdentity()
+
+        # Angled isometric view positioned relative to grid center
+        gluLookAt(
+            GRID_SIZE / 2, 12, GRID_SIZE + 8,  # Camera eye position
+            GRID_SIZE / 2, 0, GRID_SIZE / 2,   # Look-at center point
+            0, 1, 0                            # Up vector
+        )
+
+        draw_grid()
+
+        # Draw beepers/tokens (Yellow markers)
+        for bx, bz in beepers:
+            draw_cube(bx, 0.2, bz, size=0.2, color=(1.0, 0.8, 0.1))
+
+        # Draw Karel (Cyan block)
+        draw_cube(karel_x, 0.4, karel_z, size=0.4, color=(0.1, 0.7, 0.9))
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    pygame.quit()
 
 if __name__ == "__main__":
     main()
