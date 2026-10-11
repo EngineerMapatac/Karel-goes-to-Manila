@@ -51,6 +51,19 @@ Use `W`, `A`, `S`, and `D` to move, `Space` or `P` to collect a package, `R` to
 restart after a game over, and `Q` to quit. The original terminal mode does not
 require Pygame.
 
+### First-Person 3D Mode
+
+For a first-person 3D-style maze view, run:
+
+```bash
+python src/pygame_3d.py
+```
+
+This uses a lightweight raycaster rather than a full 3D engine, so it keeps the
+project easy to run while rendering buildings, streets, and packages in
+perspective. Use `W`/`S` to move, `A`/`D` to turn, `Space` to collect packages,
+`R` to restart after game over, and `Q` to quit.
+
 NumPy is not required for rendering. It would be useful as a later addition for
 AI pathfinding or fast grid calculations, while Pygame handles the window,
 keyboard input, and drawing.
