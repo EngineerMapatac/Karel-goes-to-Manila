@@ -1,4 +1,4 @@
-# Karel Goes to Manila 3D 🇵🇭
+# Karel Goes to Manila
 
 A 3D interactive simulation inspired by Stanford's Karel the Robot, reimagined on the streets of Manila. 
 
@@ -10,6 +10,7 @@ This project uses a hybrid architecture:
 
 ## Architecture Overview
 
+```
 ┌─────────────────────────────────┐        TCP Sockets         ┌─────────────────────────────────┐
 │       Python Scripting          │     (Port 8080 / JSON)     │        Godot 4 3D Engine        │
 │                                 │ ─────────────────────────> │                                 │
@@ -17,11 +18,13 @@ This project uses a hybrid architecture:
 │  - turn_left()                  │ <───────────────────────── │  - 3D Grid & Collision checks   │
 │  - pick_beeper() / put_beeper() │        "OK", "BLOCKED"     │  - Camera & transforms          │
 └─────────────────────────────────┘                            └─────────────────────────────────┘
+```
 
 ---
 
 ## Project Structure
 
+```
 Karel-goes-to-Manila/
 ├── Karel3D_Engine/          # Godot 4 .NET Project
 │   ├── Scripts/
@@ -31,7 +34,7 @@ Karel-goes-to-Manila/
 └── Karel_Client/            # Python Client
     ├── karel3d.py           # Network driver & standard Karel API
     └── student_code.py      # Player algorithm / navigation code
-
+```
 ---
 
 ## Prerequisites
