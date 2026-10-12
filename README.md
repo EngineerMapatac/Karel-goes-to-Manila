@@ -1,4 +1,4 @@
-##Karel Goes to Manila 3D##
+Karel Goes to Manila 3D
 ---
 
 A 3D adaptation of the Stanford Code in Place Karel project. Rebuilt with Python and the Ursina Engine, this game translates traditional discrete grid logic into an interactive 3D simulation through the streets of Manila.
@@ -17,8 +17,8 @@ Navigate traffic, avoid urban roadblocks, collect tokens, and drive through the 
 
 ---
 
-#Project Structure
-
+Project Structure
+---
 ```
 karel-goes-to-manila/
 ├── assets/
@@ -30,13 +30,52 @@ karel-goes-to-manila/
 └── requirements.txt
 
 ```
+---
 
-Installation & Setup1. Clone the RepositoryBashgit clone https://github.com/EngineerMapatac/Karel-goes-to-Manila.git
+Installation & Setup
+---
+
+---
+
+1. Clone the Repository
+```
+git clone https://github.com/EngineerMapatac/Karel-goes-to-Manila.git
 cd Karel-goes-to-Manila
-2. Set Up a Virtual EnvironmentmacOS / Linux:Bashpython3 -m venv venv
+```
+
+2. Set Up a Virtual Environment
+
+  macOS / Linux:
+
+```
+python3 -m venv venv
 source venv/bin/activate
-Windows:Bashpython -m venv venv
+```
+
+  Windows:
+
+```
+python -m venv venv
 venv\Scripts\activate
-3. Install DependenciesBashpip install -r requirements.txt
-(Or install Ursina directly: pip install ursina)Running the GameLaunch the game by executing the entry point:Bashpython main.py
-ControlsKeyActionIn-Game MechanicW / Up ArrowMove ForwardMoves 1 block forward in the facing direction (move())A / Left ArrowTurn LeftRotates 90° counter-clockwise (turn_left())SpacebarPick BeeperCollects a coin/beeper at the current intersectionEscapeQuitCloses the game windowRequirementsPython 3.8+Ursina Engine (pip install ursina)OpenGL-compatible graphics driverLicenseThis project is licensed under the MIT License — see the LICENSE file for details.
+
+```
+
+3. Install Dependencies
+
+```
+pip install -r requirements.txt
+
+```
+(Or install Ursina directly: pip install ursina)
+
+Running the Game
+  Launch the game by executing the entry point:
+  
+```
+python main.py
+```
+---
+
+License
+---
+This project is licensed under the MIT License — see the LICENSE file for details.
