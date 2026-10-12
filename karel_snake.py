@@ -3,8 +3,8 @@ import sys
 import random
 import os
 
-SCREEN_W = 800
-SCREEN_H = 750
+SCREEN_W = 850
+SCREEN_H = 800
 HIGH_SCORE_FILE = "highscore.txt"
 
 # Direction vectors: 0=East (+X), 1=North (-Y), 2=West (-X), 3=South (+Y)
@@ -13,12 +13,12 @@ DIRS = [(1, 0), (0, -1), (-1, 0), (0, 1)]
 class KarelSnake2D:
     def __init__(self):
         pygame.init()
-        pygame.display.set_caption("Karel Snake: Manila Streets 2D")
+        pygame.display.set_caption("Karel Snake: Manila Streets 2D (25x25)")
         self.screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont("Arial", 18, bold=True)
-        self.title_font = pygame.font.SysFont("Arial", 40, bold=True)
-        self.sub_font = pygame.font.SysFont("Arial", 22)
+        self.font = pygame.font.SysFont("Arial", 16, bold=True)
+        self.title_font = pygame.font.SysFont("Arial", 38, bold=True)
+        self.sub_font = pygame.font.SysFont("Arial", 20)
 
         self.state = "MENU"
         self.high_score = self.load_high_score()
@@ -45,20 +45,20 @@ class KarelSnake2D:
         self.init_level()
 
     def init_level(self):
-        # Grid expands by +2 every level (10x10, 12x12, 14x14, etc.)
-        self.grid_size = 10 + (self.level - 1) * 2
+        # Base map starts at 25x25 and expands by +2 every level
+        self.grid_size = 25 + (self.level - 1) * 2
         
-        # Scaling target: Level 1 -> 10, Level 2 -> 11, Level 3 -> 12, etc.
+        # Scaling target: Level 1 = 10, Level 2 = 11, Level 3 = 12, etc.
         self.beepers_in_level = 0
         self.beepers_needed_to_level_up = 9 + self.level
         
-        # Speed scaling (minimum cap 60ms)
-        self.move_delay = max(60, 220 - (self.level - 1) * 15)
+        # Move delay dynamically tuned for large 25+ grids (min cap: 45ms)
+        self.move_delay = max(45, 140 - (self.level - 1) * 10)
 
-        # Centering and sizing
-        margin_top = 80
-        playable_w = SCREEN_W - 60
-        playable_h = SCREEN_H - margin_top - 40
+        # Dynamic tile size calculation to fit the screen
+        margin_top = 70
+        playable_w = SCREEN_W - 50
+        playable_h = SCREEN_H - margin_top - 30
         self.tile_size = min(playable_w // self.grid_size, playable_h // self.grid_size)
         
         self.board_offset_x = (SCREEN_W - (self.grid_size * self.tile_size)) // 2
@@ -69,14 +69,14 @@ class KarelSnake2D:
         self.body = [(center, center), (center - 1, center), (center - 2, center)]
         self.facing = 0  # Facing East
 
-        # Spawn obstacles/walls (number increases with level: Level 1 = 0, Level 2 = 2, Level 3 = 4, etc.)
+        # Spawn obstacles/walls (Level 1: 0, Level 2: 4, Level 3: 8, etc.)
         self.walls = set()
-        num_walls = (self.level - 1) * 2
+        num_walls = (self.level - 1) * 4
         while len(self.walls) < num_walls:
             wx = random.randint(0, self.grid_size - 1)
             wy = random.randint(0, self.grid_size - 1)
-            # Avoid placing walls directly on or adjacent to Karel's spawn line
-            if (wx, wy) not in self.body and abs(wy - center) > 1:
+            # Avoid Karel's spawn lane
+            if (wx, wy) not in self.body and abs(wy - center) > 2:
                 self.walls.add((wx, wy))
 
         self.spawn_beeper()
@@ -118,7 +118,7 @@ class KarelSnake2D:
 
         self.body.insert(0, new_head)
 
-        # Check beeper collection
+        # Check beeper pickup
         if new_head == self.beeper:
             self.score += 10 * self.level
             self.beepers_in_level += 1
@@ -137,7 +137,7 @@ class KarelSnake2D:
         self.state = "GAME_OVER"
 
     def render(self):
-        self.screen.fill((22, 27, 34))
+        self.screen.fill((20, 24, 31))
 
         if self.state == "MENU":
             self.render_menu()
@@ -150,73 +150,74 @@ class KarelSnake2D:
 
     def render_menu(self):
         title = self.title_font.render("KAREL GOES TO MANILA", True, (241, 196, 15))
-        sub = self.sub_font.render("2D Infinite Grid Edition", True, (200, 200, 200))
-        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 180))
-        self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 235))
+        sub = self.sub_font.render("2D Mega Grid (25x25+)", True, (200, 200, 200))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 200))
+        self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 255))
 
         btn1 = self.sub_font.render("[ 1 ]  START GAME", True, (46, 204, 113))
         btn2 = self.sub_font.render("[ 2 ]  HIGH SCORES", True, (52, 152, 219))
         btn3 = self.sub_font.render("[ Q ]  QUIT", True, (231, 76, 60))
 
-        self.screen.blit(btn1, (SCREEN_W // 2 - btn1.get_width() // 2, 360))
-        self.screen.blit(btn2, (SCREEN_W // 2 - btn2.get_width() // 2, 420))
-        self.screen.blit(btn3, (SCREEN_W // 2 - btn3.get_width() // 2, 480))
+        self.screen.blit(btn1, (SCREEN_W // 2 - btn1.get_width() // 2, 380))
+        self.screen.blit(btn2, (SCREEN_W // 2 - btn2.get_width() // 2, 440))
+        self.screen.blit(btn3, (SCREEN_W // 2 - btn3.get_width() // 2, 500))
 
     def render_high_score_screen(self):
         title = self.title_font.render("MANILA HALL OF FAME", True, (241, 196, 15))
         score_val = self.title_font.render(f"High Score: {self.high_score}", True, (255, 255, 255))
         prompt = self.sub_font.render("Press [ M ] or [ ESC ] for Main Menu", True, (180, 180, 180))
 
-        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 220))
-        self.screen.blit(score_val, (SCREEN_W // 2 - score_val.get_width() // 2, 320))
-        self.screen.blit(prompt, (SCREEN_W // 2 - prompt.get_width() // 2, 440))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 240))
+        self.screen.blit(score_val, (SCREEN_W // 2 - score_val.get_width() // 2, 340))
+        self.screen.blit(prompt, (SCREEN_W // 2 - prompt.get_width() // 2, 460))
 
     def render_gameplay(self):
-        # Header Info
+        # Header Info Bar
         rem = self.beepers_needed_to_level_up - self.beepers_in_level
         level_lbl = self.font.render(f"LEVEL: {self.level} (Grid: {self.grid_size}x{self.grid_size})", True, (46, 204, 113))
         score_lbl = self.font.render(f"SCORE: {self.score}", True, (255, 255, 255))
         high_lbl = self.font.render(f"BEST: {self.high_score}", True, (241, 196, 15))
-        next_lbl = self.font.render(f"Next Level in: {rem} beepers", True, (243, 156, 18))
+        next_lbl = self.font.render(f"Next Level: {rem} beepers", True, (243, 156, 18))
 
-        self.screen.blit(level_lbl, (self.board_offset_x, 20))
-        self.screen.blit(score_lbl, (self.board_offset_x, 45))
-        self.screen.blit(high_lbl, (SCREEN_W - self.board_offset_x - high_lbl.get_width(), 20))
-        self.screen.blit(next_lbl, (SCREEN_W - self.board_offset_x - next_lbl.get_width(), 45))
+        self.screen.blit(level_lbl, (self.board_offset_x, 15))
+        self.screen.blit(score_lbl, (self.board_offset_x, 40))
+        self.screen.blit(high_lbl, (SCREEN_W - self.board_offset_x - high_lbl.get_width(), 15))
+        self.screen.blit(next_lbl, (SCREEN_W - self.board_offset_x - next_lbl.get_width(), 40))
 
-        # Grid Surface
-        board_rect = pygame.Rect(self.board_offset_x, self.board_offset_y, self.grid_size * self.tile_size, self.grid_size * self.tile_size)
-        pygame.draw.rect(self.screen, (35, 41, 52), board_rect)
-        pygame.draw.rect(self.screen, (80, 90, 105), board_rect, 2)
+        # Grid Background
+        board_w = self.grid_size * self.tile_size
+        board_h = self.grid_size * self.tile_size
+        board_rect = pygame.Rect(self.board_offset_x, self.board_offset_y, board_w, board_h)
+        pygame.draw.rect(self.screen, (32, 38, 48), board_rect)
+        pygame.draw.rect(self.screen, (75, 85, 100), board_rect, 2)
 
+        # Grid Lines
         for i in range(self.grid_size + 1):
             x = self.board_offset_x + i * self.tile_size
-            pygame.draw.line(self.screen, (45, 52, 66), (x, self.board_offset_y), (x, self.board_offset_y + self.grid_size * self.tile_size), 1)
+            pygame.draw.line(self.screen, (40, 48, 60), (x, self.board_offset_y), (x, self.board_offset_y + board_h), 1)
             y = self.board_offset_y + i * self.tile_size
-            pygame.draw.line(self.screen, (45, 52, 66), (self.board_offset_x, y), (self.board_offset_x + self.grid_size * self.tile_size, y), 1)
+            pygame.draw.line(self.screen, (40, 48, 60), (self.board_offset_x, y), (self.board_offset_x + board_w, y), 1)
 
-        # Draw Walls / Roadblocks (Dark grey with warning stripes/cross)
+        # Draw Obstacle Walls (Barricades)
         for (wx, wy) in self.walls:
             w_rect = pygame.Rect(
-                self.board_offset_x + wx * self.tile_size + 2,
-                self.board_offset_y + wy * self.tile_size + 2,
-                self.tile_size - 4,
-                self.tile_size - 4
+                self.board_offset_x + wx * self.tile_size + 1,
+                self.board_offset_y + wy * self.tile_size + 1,
+                self.tile_size - 2,
+                self.tile_size - 2
             )
-            pygame.draw.rect(self.screen, (108, 122, 137), w_rect, border_radius=3)
-            pygame.draw.rect(self.screen, (192, 57, 43), w_rect, 2, border_radius=3)
-            # Inner X cross for warning barricade
-            pygame.draw.line(self.screen, (192, 57, 43), (w_rect.left + 3, w_rect.top + 3), (w_rect.right - 3, w_rect.bottom - 3), 2)
-            pygame.draw.line(self.screen, (192, 57, 43), (w_rect.left + 3, w_rect.bottom - 3), (w_rect.right - 3, w_rect.top + 3), 2)
+            pygame.draw.rect(self.screen, (100, 110, 125), w_rect)
+            pygame.draw.rect(self.screen, (192, 57, 43), w_rect, 1)
+            pygame.draw.line(self.screen, (192, 57, 43), (w_rect.left, w_rect.top), (w_rect.right, w_rect.bottom), 1)
+            pygame.draw.line(self.screen, (192, 57, 43), (w_rect.left, w_rect.bottom), (w_rect.right, w_rect.top), 1)
 
         # Draw Golden Beeper
         bx = self.board_offset_x + self.beeper[0] * self.tile_size + self.tile_size // 2
         by = self.board_offset_y + self.beeper[1] * self.tile_size + self.tile_size // 2
-        radius = max(4, self.tile_size // 3)
+        radius = max(3, self.tile_size // 3)
         pygame.draw.circle(self.screen, (241, 196, 15), (bx, by), radius)
-        pygame.draw.circle(self.screen, (214, 137, 16), (bx, by), radius, 2)
 
-        # Draw Karel's Body & Head
+        # Draw Karel's Head & Body
         for idx, (seg_x, seg_y) in enumerate(self.body):
             cell_rect = pygame.Rect(
                 self.board_offset_x + seg_x * self.tile_size + 1,
@@ -225,15 +226,15 @@ class KarelSnake2D:
                 self.tile_size - 2
             )
             if idx == 0:
-                pygame.draw.rect(self.screen, (231, 76, 60), cell_rect, border_radius=4)
+                pygame.draw.rect(self.screen, (231, 76, 60), cell_rect)
                 dx, dy = DIRS[self.facing]
                 dot_x = cell_rect.centerx + dx * (self.tile_size // 4)
                 dot_y = cell_rect.centery + dy * (self.tile_size // 4)
-                pygame.draw.circle(self.screen, (255, 255, 255), (dot_x, dot_y), max(2, self.tile_size // 8))
+                pygame.draw.circle(self.screen, (255, 255, 255), (dot_x, dot_y), max(2, self.tile_size // 6))
             else:
-                pygame.draw.rect(self.screen, (52, 152, 219), cell_rect, border_radius=2)
+                pygame.draw.rect(self.screen, (52, 152, 219), cell_rect)
 
-        # Game Over Overlay
+        # Game Over Screen
         if self.state == "GAME_OVER":
             overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 190))
@@ -243,6 +244,6 @@ class KarelSnake2D:
             sub1 = self.sub_font.render("[ R ] Play Again", True, (255, 255, 255))
             sub2 = self.sub_font.render("[ M ] Main Menu", True, (200, 200, 200))
 
-            self.screen.blit(over_title, (SCREEN_W // 2 - over_title.get_width() // 2, 280))
-            self.screen.blit(sub1, (SCREEN_W // 2 - sub1.get_width() // 2, 360))
-            self.screen.blit(sub2, (SCREEN_W // 2 - sub2.get_width() // 2, 410))
+            self.screen.blit(over_title, (SCREEN_W // 2 - over_title.get_width() // 2, 300))
+            self.screen.blit(sub1, (SCREEN_W // 2 - sub1.get_width() // 2, 380))
+            self.screen.blit(sub2, (SCREEN_W // 2 - sub2.get_width() // 2, 430))
