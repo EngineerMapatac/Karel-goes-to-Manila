@@ -1,85 +1,69 @@
-Karel Goes to Manila 3D
----
+# Karel Goes to Manila 3D 🇵🇭
 
-A 3D adaptation of the Stanford Code in Place Karel project. Rebuilt with Python and the Ursina Engine, this game translates traditional discrete grid logic into an interactive 3D simulation through the streets of Manila.
+A 3D interactive simulation inspired by Stanford's Karel the Robot, reimagined on the streets of Manila. 
 
-Navigate traffic, avoid urban roadblocks, collect tokens, and drive through the city grid.
-
----
-
-**Features**
-
-* 3D Grid System: Classic Karel grid coordinates mapped directly into 3D world space.
-* Custom Jeepney Model: Support for textured .obj and .glb vehicle models with dynamic engine idling.
-* Obstacle Navigation: Collision handling for Manila traffic barriers and city boundary limits.
-* Collection Mechanics: Interactive coin/beeper collection with state updates.
-* Smooth Animations: Interpolated rotations and movement transitions between intersections.
+This project uses a hybrid architecture:
+- **Game Engine & Rendering:** Godot 4 (.NET/C#) handling 3D grid rendering, collision logic, and camera tracking.
+- **Scripting & Control:** Python client sending real-time command instructions via local TCP sockets (`127.0.0.1:8080`).
 
 ---
 
-Project Structure
+## Architecture Overview
+
+┌─────────────────────────────────┐        TCP Sockets         ┌─────────────────────────────────┐
+│       Python Scripting          │     (Port 8080 / JSON)     │        Godot 4 3D Engine        │
+│                                 │ ─────────────────────────> │                                 │
+│  - move()                       │      "MOVE", "TURN_LEFT"   │  - KarelServer.cs               │
+│  - turn_left()                  │ <───────────────────────── │  - 3D Grid & Collision checks   │
+│  - pick_beeper() / put_beeper() │        "OK", "BLOCKED"     │  - Camera & transforms          │
+└─────────────────────────────────┘                            └─────────────────────────────────┘
+
 ---
-```
+
+## Project Structure
+
 Karel-goes-to-Manila/
-│
-├── Karel3D_Engine/          <-- C# / Godot 4 3D Game Project
-│   ├── Karel3D_Engine.csproj
-│   ├── project.godot
-│   ├── MainScene.tscn
-│   └── Scripts/
-│       └── KarelServer.cs   <-- C# TCP Socket Server & Controller
-│
-└── Karel_Client/            <-- Python Scripts (Student / Runner)
-    ├── karel3d.py           <-- Python API (TCP client)
-    └── student_code.py      <-- Karel commands (move, turn_left)
-
-```
----
-
-Installation & Setup
----
+├── Karel3D_Engine/          # Godot 4 .NET Project
+│   ├── Scripts/
+│   │   └── KarelServer.cs   # TCP Socket Server & Transform Controller
+│   ├── MainScene.tscn       # 3D Grid, Camera, and Karel node
+│   └── project.godot        # Engine configuration
+└── Karel_Client/            # Python Client
+    ├── karel3d.py           # Network driver & standard Karel API
+    └── student_code.py      # Player algorithm / navigation code
 
 ---
 
-1. Clone the Repository
-```
-git clone https://github.com/EngineerMapatac/Karel-goes-to-Manila.git
-cd Karel-goes-to-Manila
-```
+## Prerequisites
 
-2. Set Up a Virtual Environment
+* Godot 4 .NET / Mono Edition
 
-  macOS / Linux:
+* .NET 8.0 SDK
 
-```
-python3 -m venv venv
-source venv/bin/activate
-```
+* Python 3.10+
 
-  Windows:
-
-```
-python -m venv venv
-venv\Scripts\activate
-
-```
-
-3. Install Dependencies
-
-```
-pip install -r requirements.txt
-
-```
-(Or install Ursina directly: pip install ursina)
-
-Running the Game
-  Launch the game by executing the entry point:
-  
-```
-python main.py
-```
 ---
 
-License
+## How to Run
+1. Launch the Engine:
+
+  * Open Karel3D_Engine in Godot 4.
+
+  * Press F5 (or click Play) to launch MainScene.tscn.
+
+  * The engine will start listening for socket connections on port 8080.
+
+2. Run the Script:
+
+  * Open a terminal in the root folder:
+
+  ```
+  python3 Karel_Client/student_code.py
+  ```
+  * Watch the 3D model execute turns and grid movements inside the Godot window.
+
 ---
-This project is licensed under the MIT License — see the LICENSE file for details.
+
+## License
+
+This project is licensed under the MIT License.
