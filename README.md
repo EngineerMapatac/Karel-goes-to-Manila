@@ -39,11 +39,11 @@ Karel-goes-to-Manila/
 
 ## Prerequisites
 
-* Godot 4 .NET / Mono Edition
+  * Godot 4 .NET / Mono Edition
 
-* .NET 8.0 SDK
+  * .NET 8.0 SDK
 
-* Python 3.10+
+  * Python 3.10+
 
 ---
 
