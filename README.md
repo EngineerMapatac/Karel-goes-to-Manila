@@ -20,14 +20,18 @@ Navigate traffic, avoid urban roadblocks, collect tokens, and drive through the 
 Project Structure
 ---
 ```
-karel-goes-to-manila/
-├── assets/
-│   ├── jeepney.obj          # 3D player model (or .glb)
-│   └── jeepney_texture.png  # Model texture map
-├── .gitignore
-├── main.py                  # Game loop, logic, and Ursina scene setup
-├── README.md
-└── requirements.txt
+Karel-goes-to-Manila/
+│
+├── Karel3D_Engine/          <-- C# / Godot 4 3D Game Project
+│   ├── Karel3D_Engine.csproj
+│   ├── project.godot
+│   ├── MainScene.tscn
+│   └── Scripts/
+│       └── KarelServer.cs   <-- C# TCP Socket Server & Controller
+│
+└── Karel_Client/            <-- Python Scripts (Student / Runner)
+    ├── karel3d.py           <-- Python API (TCP client)
+    └── student_code.py      <-- Karel commands (move, turn_left)
 
 ```
 ---
