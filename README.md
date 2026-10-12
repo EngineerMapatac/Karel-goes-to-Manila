@@ -1,6 +1,7 @@
 # Karel Snake: Manila Edition
 
 ### Final Project | Stanford University — Code in Place
+[![Stanford Code in Place Certificate](https://img.shields.io/badge/Stanford_Certificate-Verified-c41230?style=for-the-badge&logo=stanford&logoColor=white)](https://codeinplace.stanford.edu/cip6/certificate/pts0ck)
 
 An interactive 2D arcade reimagining of Stanford's classic **Karel the Robot**, built and submitted as the final capstone project for **Stanford University's Code in Place**.
 
