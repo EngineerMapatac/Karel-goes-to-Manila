@@ -5,15 +5,24 @@ def turn_right():
     turn_left()
     turn_left()
 
+def turn_around():
+    turn_left()
+    turn_left()
+
 def main():
-    # Drive through the Manila street grid
+    print("Starting Karel's route through Manila...")
+    
+    # Example route: Move forward 3 tiles, turn left, move 2 tiles
+    move()
     move()
     move()
     turn_left()
     move()
-    pick_beeper()
+    move()
     turn_right()
     move()
+
+    print("Route complete!")
 
 if __name__ == "__main__":
     main()

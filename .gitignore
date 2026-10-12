@@ -1,29 +1,15 @@
-# Byte-compiled / optimized / DLL files
+# Godot 4 / Mono C# ignores
+.godot/
+*.translation
+.mono/
+[Bb]in/
+[Oo]bj/
+*.csproj.user
+*.sln.DotSettings.user
+
+# Python ignores
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Ursina and Panda3D caches/logs
-prc_cache/
-*.log
-
-# 3D assets working files & temp exports (keep original .blend local if desired)
-*.blend1
-*.bak
-
-# Virtual Environments
 venv/
-.venv/
-env/
-ENV/
-
-# VS Code settings
-.vscode/
-*.code-workspace
-
-# macOS clutter
-.DS_Store
-
-# Windows clutter
-Thumbs.db
-ehthumbs.db
+.env
