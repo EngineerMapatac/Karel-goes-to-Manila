@@ -7,7 +7,7 @@ SCREEN_W = 800
 SCREEN_H = 750
 HIGH_SCORE_FILE = "highscore.txt"
 
-# Direction vectors: 0=East (+X), 1=North (-Y in screen space), 2=West (-X), 3=South (+Y in screen space)
+# Direction vectors: 0=East (+X), 1=North (-Y), 2=West (-X), 3=South (+Y)
 DIRS = [(1, 0), (0, -1), (-1, 0), (0, 1)]
 
 class KarelSnake2D:
@@ -20,7 +20,6 @@ class KarelSnake2D:
         self.title_font = pygame.font.SysFont("Arial", 40, bold=True)
         self.sub_font = pygame.font.SysFont("Arial", 22)
 
-        # Game states: "MENU", "HIGH_SCORES", "PLAYING", "GAME_OVER"
         self.state = "MENU"
         self.high_score = self.load_high_score()
         self.reset_full_game()
@@ -43,17 +42,20 @@ class KarelSnake2D:
     def reset_full_game(self):
         self.level = 1
         self.score = 0
-        self.beepers_in_level = 0
-        self.beepers_needed_to_level_up = 5
         self.init_level()
 
     def init_level(self):
         # Grid expands by +2 every level (10x10, 12x12, 14x14, etc.)
         self.grid_size = 10 + (self.level - 1) * 2
-        # Speed increases: step delay drops down to a minimum cap of 60ms
-        self.move_delay = max(60, 220 - (self.level - 1) * 20)
+        
+        # Scaling target: Level 1 -> 10, Level 2 -> 11, Level 3 -> 12, etc.
+        self.beepers_in_level = 0
+        self.beepers_needed_to_level_up = 9 + self.level
+        
+        # Speed scaling (minimum cap 60ms)
+        self.move_delay = max(60, 220 - (self.level - 1) * 15)
 
-        # Calculate dynamic cell dimension & centering on screen
+        # Centering and sizing
         margin_top = 80
         playable_w = SCREEN_W - 60
         playable_h = SCREEN_H - margin_top - 40
@@ -62,17 +64,27 @@ class KarelSnake2D:
         self.board_offset_x = (SCREEN_W - (self.grid_size * self.tile_size)) // 2
         self.board_offset_y = margin_top + (playable_h - (self.grid_size * self.tile_size)) // 2
 
-        # Start snake at center
+        # Spawn Karel at center
         center = self.grid_size // 2
         self.body = [(center, center), (center - 1, center), (center - 2, center)]
         self.facing = 0  # Facing East
-        self.beepers_in_level = 0
+
+        # Spawn obstacles/walls (number increases with level: Level 1 = 0, Level 2 = 2, Level 3 = 4, etc.)
+        self.walls = set()
+        num_walls = (self.level - 1) * 2
+        while len(self.walls) < num_walls:
+            wx = random.randint(0, self.grid_size - 1)
+            wy = random.randint(0, self.grid_size - 1)
+            # Avoid placing walls directly on or adjacent to Karel's spawn line
+            if (wx, wy) not in self.body and abs(wy - center) > 1:
+                self.walls.add((wx, wy))
+
         self.spawn_beeper()
 
     def spawn_beeper(self):
         while True:
             pos = (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1))
-            if pos not in self.body:
+            if pos not in self.body and pos not in self.walls:
                 self.beeper = pos
                 break
 
@@ -89,25 +101,29 @@ class KarelSnake2D:
         head_x, head_y = self.body[0]
         new_head = (head_x + dx, head_y + dy)
 
-        # Boundary collision
+        # 1. Boundary collision
         if not (0 <= new_head[0] < self.grid_size and 0 <= new_head[1] < self.grid_size):
             self.handle_game_over()
             return
 
-        # Self collision
+        # 2. Roadblock / Wall collision
+        if new_head in self.walls:
+            self.handle_game_over()
+            return
+
+        # 3. Self-body collision
         if new_head in self.body[:-1]:
             self.handle_game_over()
             return
 
         self.body.insert(0, new_head)
 
-        # Beeper collected
+        # Check beeper collection
         if new_head == self.beeper:
             self.score += 10 * self.level
             self.beepers_in_level += 1
             self.save_high_score()
 
-            # Level up trigger
             if self.beepers_in_level >= self.beepers_needed_to_level_up:
                 self.level += 1
                 self.init_level()
@@ -156,31 +172,44 @@ class KarelSnake2D:
         self.screen.blit(prompt, (SCREEN_W // 2 - prompt.get_width() // 2, 440))
 
     def render_gameplay(self):
-        # Header Info Bar
+        # Header Info
+        rem = self.beepers_needed_to_level_up - self.beepers_in_level
         level_lbl = self.font.render(f"LEVEL: {self.level} (Grid: {self.grid_size}x{self.grid_size})", True, (46, 204, 113))
         score_lbl = self.font.render(f"SCORE: {self.score}", True, (255, 255, 255))
         high_lbl = self.font.render(f"BEST: {self.high_score}", True, (241, 196, 15))
-        next_lbl = self.font.render(f"Next Level in: {self.beepers_needed_to_level_up - self.beepers_in_level} beepers", True, (189, 195, 199))
+        next_lbl = self.font.render(f"Next Level in: {rem} beepers", True, (243, 156, 18))
 
         self.screen.blit(level_lbl, (self.board_offset_x, 20))
         self.screen.blit(score_lbl, (self.board_offset_x, 45))
         self.screen.blit(high_lbl, (SCREEN_W - self.board_offset_x - high_lbl.get_width(), 20))
         self.screen.blit(next_lbl, (SCREEN_W - self.board_offset_x - next_lbl.get_width(), 45))
 
-        # Board Background & Grid lines
+        # Grid Surface
         board_rect = pygame.Rect(self.board_offset_x, self.board_offset_y, self.grid_size * self.tile_size, self.grid_size * self.tile_size)
         pygame.draw.rect(self.screen, (35, 41, 52), board_rect)
         pygame.draw.rect(self.screen, (80, 90, 105), board_rect, 2)
 
         for i in range(self.grid_size + 1):
-            # Vertical lines
             x = self.board_offset_x + i * self.tile_size
             pygame.draw.line(self.screen, (45, 52, 66), (x, self.board_offset_y), (x, self.board_offset_y + self.grid_size * self.tile_size), 1)
-            # Horizontal lines
             y = self.board_offset_y + i * self.tile_size
             pygame.draw.line(self.screen, (45, 52, 66), (self.board_offset_x, y), (self.board_offset_x + self.grid_size * self.tile_size, y), 1)
 
-        # Draw Beeper (Gold passenger token)
+        # Draw Walls / Roadblocks (Dark grey with warning stripes/cross)
+        for (wx, wy) in self.walls:
+            w_rect = pygame.Rect(
+                self.board_offset_x + wx * self.tile_size + 2,
+                self.board_offset_y + wy * self.tile_size + 2,
+                self.tile_size - 4,
+                self.tile_size - 4
+            )
+            pygame.draw.rect(self.screen, (108, 122, 137), w_rect, border_radius=3)
+            pygame.draw.rect(self.screen, (192, 57, 43), w_rect, 2, border_radius=3)
+            # Inner X cross for warning barricade
+            pygame.draw.line(self.screen, (192, 57, 43), (w_rect.left + 3, w_rect.top + 3), (w_rect.right - 3, w_rect.bottom - 3), 2)
+            pygame.draw.line(self.screen, (192, 57, 43), (w_rect.left + 3, w_rect.bottom - 3), (w_rect.right - 3, w_rect.top + 3), 2)
+
+        # Draw Golden Beeper
         bx = self.board_offset_x + self.beeper[0] * self.tile_size + self.tile_size // 2
         by = self.board_offset_y + self.beeper[1] * self.tile_size + self.tile_size // 2
         radius = max(4, self.tile_size // 3)
@@ -196,15 +225,12 @@ class KarelSnake2D:
                 self.tile_size - 2
             )
             if idx == 0:
-                # Karel Head (Jeepney Red)
                 pygame.draw.rect(self.screen, (231, 76, 60), cell_rect, border_radius=4)
-                # Direction indicator dot
                 dx, dy = DIRS[self.facing]
                 dot_x = cell_rect.centerx + dx * (self.tile_size // 4)
                 dot_y = cell_rect.centery + dy * (self.tile_size // 4)
                 pygame.draw.circle(self.screen, (255, 255, 255), (dot_x, dot_y), max(2, self.tile_size // 8))
             else:
-                # Passenger Trail (Blue-Cyan)
                 pygame.draw.rect(self.screen, (52, 152, 219), cell_rect, border_radius=2)
 
         # Game Over Overlay
